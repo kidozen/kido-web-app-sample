@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Kido Web App</title>
+    <link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.2.0/css/bootstrap.css">
+</head>
+
+<body>
+    <div class="container">
+        <h1>KidoZen web app sample</h1>
+        <button id="btn-passive-auth" class="btn">Sign in!</button>
+        <div id="container" style="display:none">
+            <h2>Welcome!</h2>
+            <h3>Using the KidoZen storage service</h3>
+            <p>Let's create some tasks!</p>
+            <form role="form">
+                <div class="form-group">
+                    <label for="input-task-name">Task name</label>
+                    <input type="text" class="form-control" id="input-task-name" placeholder="Task name">
+                </div>
+                <div class="form-group">
+                    <label for="input-task-description">Task description</label>
+                    <input type="text" class="form-control" id="input-task-description" placeholder="Task description">
+                </div>
+                <div class="checkbox">
+                    <label>
+                        <input id="input-task-done" type="checkbox">Done?
+                    </label>
+                </div>
+                <button id="btn-submit-task" type="submit" class="btn btn-default">Add</button>
+            </form>
+            <hr/>
+            <form role="form">
+                <div class="form-group">
+                    <label for="ta-response">Response body</label>
+                    <textarea id="ta-response" class="form-control" style="height: 200px"></textarea>
+                </div>
+                <button id="btn-get-tasks" type="submit" class="btn btn-default">Get all tasks</button>
+            </form>
+        </div>
+    </div>
+    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script type="text/javascript" src="/lib/kido-js.js"></script>
+    <script type="text/javascript">
+    $(function() {
+        var application = 'tasks',
+            marketplace = 'contoso.local.kidozen.com',
+            kido = new Kido(application, marketplace),
+            tasks = kido.storage().objectSet('tasks');
+
+        $('#btn-passive-auth').click(function() {
+            console.log('trying to authenticate passively');
+            var $btn_passive_auth = $(this);
+            // kido passive auth strategy
+            kido.authenticate()
+                .done(function() {
+                    // user authenticated
+                    $btn_passive_auth.hide();
+                    $('#container').show();
+                    console.log('user authenticated');
+                })
+                .fail(onRequestError);
+        });
+
+        $('#btn-submit-task').click(function(event) {
+            event.preventDefault();
+            var object = {};
+            object.name = $('#input-task-name').val();
+            object.description = $('#input-task-description').val();
+            object.done = $('#input-task-done').prop('checked');
+            tasks
+                .insert(object)
+                .done(onResponse)
+                .fail(onRequestError);
+        });
+
+        $('#btn-get-tasks').click(function(event) {
+            event.preventDefault();
+            tasks
+                .query()
+                .done(onResponse)
+                .fail(onRequestError);
+        });
+
+        function onResponse(res) {
+            $('#ta-response').val(JSON.stringify(res, 0, 2));
+        }
+
+        function onRequestError(err) {
+            alert('There was an error executing your request: ' + JSON.stringify(err));
+        }
+
+    });
+    </script>
+</body>
+
+</html>
