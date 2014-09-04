@@ -7,7 +7,7 @@ KidoZen sample web app
 
 This app is a Node.js app, which only serves a sample HTML.
 
-- You need to have Node.js installed in your computer.
+- You need to have Node.js installed on your computer.
 - Run `npm install` on the directory where this app is to install dependencies.
 - Run `node index.js` to run the app.
 - Go to `http://localhost:9000` from your browser.
