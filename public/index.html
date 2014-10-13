@@ -46,7 +46,8 @@
     $(function() {
         var application = 'app-name',
             marketplace = 'my-company.kidocloud.com',
-            kido = new Kido(application, marketplace),
+            secretKey = 'your-app-secret-key',
+            kido = new Kido(application, marketplace, { secretKey: secretKey }),
             tasks = kido.storage().objectSet('tasks');
 
         $('#btn-passive-auth').click(function() {
