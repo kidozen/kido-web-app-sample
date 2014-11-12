@@ -1,5 +1,6 @@
-// KidoZen Javascript SDK v0.1.9.
-// Copyright (c) 2013 Kidozen, Inc. MIT Licensed
+// KidoZen Javascript SDK v0.1.10.
+// Copyright (c) 2014 Kidozen, Inc. MIT Licensed
+var KIDO_SDK_VERSION = '0.1.10';
 /**
  * Kido - Kidozen representation of an Application.
  *
@@ -50,9 +51,7 @@ var Kido = function (name, marketplace, options) {
     
     if (typeof options === 'object') {
         if (typeof options.token === 'object') {
-            this.authenticated = true;
-            this.url = marketplace;
-            this.token = $.Deferred().resolve(processToken(options.token));
+            this.inheritedToken = options.token;
         }
         if (typeof options.username === 'string') {
             _username = options.username;
@@ -91,10 +90,13 @@ var Kido = function (name, marketplace, options) {
      * @public
      */
     this.authenticate = function () {
-        if (self.hosted) return $.Deferred().reject("No need to authenticate to this Web App");
+        if (self.hosted) return $.Deferred().resolve("No need to authenticate to this Web App");
         var authArgs = arguments;
         self.token = self.getConfig.then(function (config) {
-            if (authArgs.length === 0) {
+            if (authArgs.length === 0 && self.inheritedToken) {
+                self.authenticated = true;
+                return processToken(self.inheritedToken);
+            } else if (authArgs.length === 0) {
                 return passiveAuth(config.authConfig);
             }
 
@@ -122,7 +124,11 @@ var Kido = function (name, marketplace, options) {
 
         var defaults = {
             type: "POST",
-            cache: true
+            cache: true,
+            headers: {
+                'X-Kido-SDK': 'JS',
+                'X-Kido-SDK-Version': KIDO_SDK_VERSION || 'UNKNOWN'
+            }
         };
 
         var opts = $.extend({}, defaults, settings);
@@ -987,12 +993,31 @@ var KidoSecurity = function (kidoApp) {
      */
     this.SERVICE_NAME = "security";
 
-    this.getLoggedInUser = function () {
-        return self.app.get("/user");
+    this.getLoggedInUser = function() {
+        return self.app.get("/user")
+            .then(function(claims) {
+                var result = {
+                    claims: {}
+                };
+                claims.forEach(function(item) {
+                    if (item.type.indexOf("http://schemas.kidozen.com/") !== -1) {
+                        var key = item.type.substring(item.type.lastIndexOf("/") + 1);
+                        result[key] = item.value;
+                    } else {
+                        result.claims[item.type] = item.value;
+                    }
+                });
+                return result;
+            });
     };
 
     this.getOriginalToken = function () {
         return self.app.get("/user/original-token");
+    };
+
+    this.getJWT = function (useGzip) {
+        var url = "/api/v3/delegation/token" + (useGzip ? "?gzip=true" : "");
+        return self.app.get(url);
     };
 };
 
